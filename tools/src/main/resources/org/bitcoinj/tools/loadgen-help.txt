@@ -1,0 +1,15 @@
+LoadGen: generate load on the Gigablock test network
+
+Usage: loadgen --flags action-name
+       loadgen action-name --flags
+
+>>> ACTIONS
+  getdepositaddress    Prints the deposit address.
+  getworkaddress       Prints the working address.
+  status               Prints the status.
+  withdraw <addr>      Sends all remaining funds to <addr>.
+  run                  Start the load generator, it will run for ever.
+
+>>> GENERAL OPTIONS
+  --debuglog           Enables logging from the core library.
+  --db=<dir>           Sets the database directory - default = ~/.loadgen
