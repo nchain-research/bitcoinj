@@ -85,9 +85,7 @@ public class InteractiveScriptStateController extends ScriptStateListener {
         String remainingString = truncateData(remainScript.toString());
         int startIndex = fullScriptString.indexOf(remainingString);
         String markedScriptString = fullScriptString.substring(0, startIndex) + "^" + fullScriptString.substring(startIndex);
-        //System.out.println("Remaining code: " + remainingString);
         //results.setText(results.getText() + "Execution point (^): " + markedScriptString);
-        System.out.println();
 
         //dump stacks
         List<byte[]> reverseStack = new ArrayList<>(getStack());
@@ -104,7 +102,6 @@ public class InteractiveScriptStateController extends ScriptStateListener {
 
             }
         }
-        System.out.println();
 
         if (!getAltstack().isEmpty()) {
             reverseStack = new ArrayList<>(getAltstack());
@@ -114,7 +111,6 @@ public class InteractiveScriptStateController extends ScriptStateListener {
             for (byte[] bytes : reverseStack) {
                 //results.setText(results.getText() + HEX.encode(bytes));
             }
-            System.out.println();
         }
 
         if (!getIfStack().isEmpty()) {
@@ -125,7 +121,6 @@ public class InteractiveScriptStateController extends ScriptStateListener {
             for (Boolean element : reverseIfStack) {
          //       results.setText(results.getText() + element);
             }
-            System.out.println();
         }
 
 
@@ -133,7 +128,7 @@ public class InteractiveScriptStateController extends ScriptStateListener {
 
     @Override
     public void onExceptionThrown(ScriptException exception) {
-        System.out.println("Exception thrown: ");
+        
     }
 
     @Override
