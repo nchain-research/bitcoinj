@@ -1654,7 +1654,7 @@ public class Script {
                 throw new ScriptException("Stack size exceeded range");
 
             if (scriptStateListener != null) {
-                scriptStateListener.onAfterOpCodeExectuted();
+                scriptStateListener.onAfterOpCodeExecuted();
             }
         }
         

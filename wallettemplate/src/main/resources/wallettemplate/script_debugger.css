@@ -1,0 +1,79 @@
+.mnemonic-area *.text {
+    -fx-text-alignment: center;
+}
+
+.title-banner {
+    -fx-background-color: #b3fbc4;
+}
+
+.title-label {
+    -fx-background-color: darkseagreen;
+    -fx-text-fill: white;
+}
+
+.root-pane {
+    -fx-background-color:   linear-gradient(to bottom, lightblue, darkslategray) ;
+}
+
+.info-bar {
+    -fx-background-color: linear-gradient(to bottom, black, darkslategray);
+    -fx-padding: 10;
+}
+.info-bar > Label {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+.info-bar > .progress-bar > .bar {
+    -fx-padding: 8;
+}
+.info-bar > .progress-bar > .track {
+    -fx-opacity: 0.0;
+}
+
+
+.fat-button {
+    -fx-padding: 10 15 10 15;
+    -fx-min-width: 100;
+    -fx-base: whitesmoke;
+}
+
+.fat-button:default {
+    -fx-base: orange;
+    -fx-text-fill: white;
+}
+
+.fat-button:cancel {
+    -fx-background-color: lightgray, white;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 3;
+    -fx-text-fill: black;
+}
+
+.fat-button:cancel:hover {
+    -fx-base: white;
+    -fx-background-insets: -1, 0, 1, 2;
+    -fx-background-color: -fx-shadow-highlight-color, -fx-outer-border, -fx-inner-border, -fx-body-color;
+    -fx-background-radius: 3;
+    -fx-text-fill: black;
+}
+
+
+.inp {
+    -fx-font-family: "Roboto", "Droid Sans", sans-serif;
+    -fx-font-size: 16px;
+    -webkit-fx-margin-top: 10px;
+    -moz-fx-margin-top: 10px;
+    -ms-fx-margin-top: 10px;
+    -o-fx-margin-top: 10px;
+    -khtml-fx-margin-top: 10px;
+    fx-margin-top: 10px;
+    /*-fx-padding: 8px 8px 6px 8px;*/
+    -fx-position: relative;
+    /*-fx-display: block;*/
+    -fx-outline: none;
+    -fx-border: none;
+    -fx-pref-height: 10px;
+    -fx-background: bottom left linear-gradient(#a9a9a9, #a9a9a9) no-repeat, bottom center linear-gradient(#a9a9a9, #a9a9a9) repeat-x, bottom right linear-gradient(#a9a9a9, #a9a9a9) no-repeat;
+    -fx-background-size: 1px 6px, 1px 1px, 1px 6px;
+}
+

@@ -15,11 +15,13 @@
  */
 package org.bitcoinj.script;
 
+import javafx.fxml.FXML;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ScriptException;
 import org.bitcoinj.core.Transaction;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -45,7 +47,7 @@ public abstract class ScriptStateListener {
     private List<byte[]> altstack;
     private List<Boolean> ifStack;
     private Coin value;
-    private Set<Script.VerifyFlag> verifyFlags;
+
 
     private int chunkIndex;
     private ScriptChunk currentChunk;
@@ -62,7 +64,6 @@ public abstract class ScriptStateListener {
         this.altstack = altstack;
         this.ifStack = ifStack;
         this.value = value;
-        this.verifyFlags = verifyFlags;
 
         this.scriptChunks = script.chunks;
 
@@ -84,7 +85,7 @@ public abstract class ScriptStateListener {
      * Called after execution of an op code and all internal state is updated.  Note that this may not get called for all op codes in the script.
      * This will only be called if the operation does not fail and the operation is inside an executed branch of code.
      */
-    public abstract void onAfterOpCodeExectuted();
+    public abstract void onAfterOpCodeExecuted();
 
     /**
      * Used in conjunction with Script.executeDebugScript(...).  This will be called if any ScriptExceptions are thrown before rethrowing the exception.
@@ -125,9 +126,6 @@ public abstract class ScriptStateListener {
         return value;
     }
 
-    public Set<Script.VerifyFlag> getVerifyFlags() {
-        return verifyFlags;
-    }
 
     /**
      * @return The internally tracked index of the currently executing ScriptChunk.
@@ -145,6 +143,9 @@ public abstract class ScriptStateListener {
     }
 
     public List<ScriptChunk> getScriptChunks() {
+        if(scriptChunks == null){
+            scriptChunks = new ArrayList<>();
+        }
         return scriptChunks;
     }
 }

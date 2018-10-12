@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.String?>
+<?import javafx.collections.FXCollections?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.effect.Bloom?>
+<?import javafx.scene.effect.BoxBlur?>
+<?import javafx.scene.effect.ColorAdjust?>
+<?import javafx.scene.effect.DropShadow?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane fx:id="anchorPane" maxHeight="Infinity" maxWidth="Infinity" prefHeight="600.0" styleClass="root-pane"
+            xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="wallettemplate.InteractiveScriptStateController">
+    <ImageView fitHeight="243.0" fitWidth="243.0" opacity="0.28" pickOnBounds="true" preserveRatio="true"
+               AnchorPane.bottomAnchor="-36.0" AnchorPane.rightAnchor="-34.0">
+        <effect>
+            <ColorAdjust>
+                <input>
+                    <BoxBlur height="20.0" width="20.0"/>
+                </input>
+            </ColorAdjust>
+        </effect>
+
+        <Image url="@bitcoin_logo_plain.png"/>
+    </ImageView>
+
+    <VBox alignment="CENTER" prefWidth="${anchorPane.width}" spacing="20.0">
+        <Label style="-fx-text-fill: white" text="Script Debugger">
+            <font>
+                <Font name="System Bold" size="25.0"/>
+            </font>
+        </Label>
+
+        <ComboBox fx:id="verifyFlags" promptText="Enter verify flag" style="-fx-prompt-text-fill: lightgray"
+                  styleClass="inp" VBox.vgrow="ALWAYS">
+            <items>
+                <FXCollections fx:factory="observableArrayList">
+                    <String fx:value="P2SH"/>
+                    <String fx:value="STRICTENC"/>
+                    <String fx:value="DERSIG"/>
+                    <String fx:value="LOW_S"/>
+                    <String fx:value="NULLDUMMY"/>
+                    <String fx:value="SIGPUSHONLY"/>
+                    <String fx:value="MINIMALDATA"/>
+                    <String fx:value="DISCOURAGE_UPGRADABLE_NOPS"/>
+                    <String fx:value="CLEANSTACK"/>
+                    <String fx:value="CHECKLOCKTIMEVERIFY"/>
+                    <String fx:value="ENABLESIGHASHFORKID"/>
+                    <String fx:value="MONOLITH_OPCODES"/>
+                </FXCollections>
+            </items>
+            <effect>
+                <Bloom/>
+            </effect>
+        </ComboBox>
+
+        <TextField fx:id="scriptSig" minWidth="1000" promptText="Enter Script Sig" styleClass="inp"/>
+
+        <TextField fx:id="scriptPub" promptText="Enter Script pubKey"  minWidth="1000" styleClass="inp"/>
+
+
+
+        <opaqueInsets>
+            <Insets/>
+        </opaqueInsets>
+
+        <padding>
+            <Insets left="25.0" right="25.0" top="23.0"/>
+        </padding>
+
+    </VBox>
+
+    <HBox alignment="BOTTOM_CENTER" prefHeight="30.0" prefWidth="305.0" AnchorPane.leftAnchor="143.0"
+          AnchorPane.rightAnchor="152.0" AnchorPane.topAnchor="400">
+        <children>
+            <Button fx:id="debugBtn" mnemonicParsing="false" onAction="#debugClicked" prefWidth="100.0"
+                    style="-fx-background-color: lightgrey;" styleClass="fat-button" text="Debug"
+                    AnchorPane.topAnchor="400"/>
+
+        </children>
+    </HBox>
+
+    <HBox alignment="CENTER" maxHeight="-Infinity" minHeight="-Infinity" prefWidth="${anchorPane.width}" spacing="10"
+          AnchorPane.topAnchor="500">
+        <TextArea disable="true"
+                  style="-fx-background-color: lightgray;-fx-text-fill: white;-fx-start-margin: 50%;-fx-end-margin: 50%"/>
+
+        <TextArea disable="true" style="-fx-background-color: lightgray;-fx-text-fill: white"/>
+    </HBox>
+    <effect>
+        <DropShadow/>
+    </effect>
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+    </padding>
+</AnchorPane>
