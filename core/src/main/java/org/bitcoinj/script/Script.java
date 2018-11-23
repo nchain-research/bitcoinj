@@ -88,7 +88,8 @@ public class Script {
         SIGHASH_FORKID,
         REPLAY_PROTECTION,
         MONOLITH_OPCODES, // May 15, 2018 Hard fork
-        PUBKEYTYPE // June 26, 29018.
+        PUBKEYTYPE, // June 26, 29018.
+        MAGNETIC_OPCODES // November 15, 2018 Hard fork
     }
 
     // The outcome of the script execution is affected by the Verification flags used. The more verifications are
@@ -908,9 +909,12 @@ public class Script {
 
             case OP_2MUL:
             case OP_2DIV:
-            case OP_MUL:
                 //disabled codes
                 return true;
+            case OP_MUL:
+                // enabled codes, still disabled if flag is not activated
+                // re-enabled OP Code, November 15, 2018 Hard fork
+                return !verifyFlags.contains(VerifyFlag.MAGNETIC_OPCODES);
 
             case OP_CAT:
             case OP_SPLIT:
@@ -1126,7 +1130,7 @@ public class Script {
                 case OP_FROMALTSTACK:
                     if (altstack.isEmpty())
                         throw new ScriptException(ScriptError.SCRIPT_ERR_INVALID_ALTSTACK_OPERATION,
-                                "the operation was invalid given the contents of the altstack");
+                                "the operation xwas invalid given the contents of the altstack");
                     stack.add(altstack.pollLast());
                     break;
                 case OP_2DROP:
@@ -1471,6 +1475,7 @@ public class Script {
                     throw new ScriptException(ScriptError.SCRIPT_ERR_DISABLED_OPCODE, "script includes a disabled opcode");
                 case OP_ADD:
                 case OP_SUB:
+                case OP_MUL:
                 case OP_DIV:
                 case OP_MOD:
                 case OP_BOOLAND:
@@ -1589,13 +1594,17 @@ public class Script {
                         else
                             numericOPresult = numericOPnum2;
                         break;
+                     case OP_MUL:
+                        // re-enabled OP Code, November 15, 2018 Hard fork
+                        numericOPresult = numericOPnum1.multiply(numericOPnum2);
+                        break;
                     default:
                         throw new RuntimeException("Opcode switched at runtime?");
                     }
                     
                     stack.add(Utils.reverseBytes(Utils.encodeMPI(numericOPresult, false)));
                     break;
-                case OP_MUL:
+
                 case OP_LSHIFT:
                 case OP_RSHIFT:
                     throw new ScriptException(ScriptError.SCRIPT_ERR_DISABLED_OPCODE, "script includes a disabled opcode");
