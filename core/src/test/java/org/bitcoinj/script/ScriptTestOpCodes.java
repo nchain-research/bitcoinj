@@ -4,18 +4,28 @@ import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ScriptException;
 import org.bitcoinj.core.Utils;
 
+
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
+
 import java.util.LinkedList;
-import java.util.List;
+
 import static org.bitcoinj.core.Utils.HEX;
+
 
 /**
  * Base class for testing the different OPCodes in the Bitcoin script language. It provides
  * some utility methods for testing and casting between data types.
+ *
+ * As a general rule, the data in the stack is an array of bytes. The interpretation of each element of the stack
+ * depends on the operand we are applying: It can be treated as a number (for arithmetic operations), or just as
+ * an array of bytes (for signature verification). For that reason, the operands are treated as Objects, and the
+ * treatment is different depending on the actual operand data type:
+ * - String: The operands is treated as a NUMBER in HEXADECIMAL notation, following the rules fo te Bitcoin
+ *           Scripting language( little endian and sign bit)
+ * - BigInteger: It's treated as a Number, following the rules for the Bitoin Scripting language.
  */
+
 public class ScriptTestOpCodes {
 
     /**
@@ -59,14 +69,20 @@ public class ScriptTestOpCodes {
         return result;
     }
 
+    /**
+     * Converts a number in Hexadecimal (in String format) into a byte array ready to be pushed into a Script stack,
+     * following the conventions used in the Bitcoin protocol.
+     * - little endian codification: The least significatn bytes are on the left
+     * - Signed magnitude representation: most significant bit contains the sign (1 = negative)
+     */
+    protected byte[] castToByteArray(String hex) throws IOException {
+        return castToByteArray(castToBigInteger(hex));
+    }
 
-    protected byte[] castToByteArray(long number) {
-        byte[] bytes = ByteBuffer.allocate(Long.SIZE / Byte.SIZE).putLong(number).array();
-        List<Byte> bytesNotZero = new ArrayList();
-        for (byte b : bytes) if (b != 0) bytesNotZero.add(b);
-        byte[] result = new byte[bytesNotZero.size()];
-        for (int i = 0; i < result.length; i++) result[i] = bytesNotZero.get(i);
-        return result;
+    protected byte[] castToByteArray(Object obj) throws Exception {
+        if (obj instanceof String) return castToByteArray((String) obj);
+        if (obj instanceof BigInteger) return castToByteArray((BigInteger) obj);
+        throw new Exception("Type not supported: " + obj.getClass().getName());
     }
 
     /**
@@ -80,30 +96,32 @@ public class ScriptTestOpCodes {
         Script.executeScript(null, 0, script, originalStack, Coin.ZERO, Script.ALL_VERIFY_FLAGS);
 
         // We check that the Top of the stack contains the expected result...
-        BigInteger topStackBI =  castToBigInteger(originalStack.pollLast(), false);
-        BigInteger expectedBI = castToBigInteger(expected, false);
-        if (!topStackBI.equals(expectedBI))
-            throw new ScriptException("ERROR in Script Verification - Expected: " + expected + " actual Result: " + topStackBI);
+        boolean result = true;
+        byte[] topStack = originalStack.pollLast();
+        if (topStack.length == expected.length) {
+            for (int i = 0; i < topStack.length; i++) if (topStack[i] != expected[i]) result = false;
+        }
+        if (!result)
+            throw new ScriptException("ERROR in Script Verification. Top Stack and expected result do NOT match.");
     }
 
     /**
      * Verifies that the Op-Code works properly with the 2 operands provided, and the result (after executing the
      * script engine behind the scenes) is the same as the expected one.
+     *
      */
-    protected void checkBinaryTestResult(BigInteger[] originalStack, BigInteger op1, BigInteger op2, int opCode, BigInteger expected)
-            throws ScriptException {
+    protected void checkBinaryTestResult(LinkedList<byte[]> originalStack, Object op1, Object op2, int opCode, Object expected)
+            throws Exception {
         boolean result = false;
         try {
-            // we feed the stack with the original one, and the 2 operands...
             LinkedList<byte[]> stack = new LinkedList<>();
-            if (originalStack != null)
-                for (BigInteger number : originalStack) stack.push(castToByteArray(number));
+            if (originalStack != null) stack.addAll(originalStack);
             stack.push(castToByteArray(op1));
             stack.push(castToByteArray(op2));
 
             // We build a Script that only contains the OP Code
             ScriptBuilder scriptBuilder = new ScriptBuilder();
-            Script script = scriptBuilder.op(ScriptOpCodes.OP_MUL).build();
+            Script script = scriptBuilder.op(opCode).build();
 
             // We run the Script.
             checkTestResultForAllFlags(stack, script, castToByteArray(expected));
@@ -112,25 +130,42 @@ public class ScriptTestOpCodes {
         }
     }
 
-
     /**
-     * Convenience method, without specifiying previous content int the Stack (no previous content in it before
-     * executing the Script)
+     * Convenience method, without specifying an original stack trace. This methods works as if there is no data in the
+     * stack priori to the execution.
      */
-
-    protected void checkBinaryTestResult(BigInteger op1, BigInteger op2, int opCode, BigInteger expected) throws ScriptException {
+    protected void checkBinaryTestResult(Object op1, Object op2, int opCode, Object expected) throws Exception {
         checkBinaryTestResult(null, op1, op2, opCode, expected);
     }
-    protected void checkBinaryTestResult(BigInteger op1, String op2, int opCode, String expected) throws ScriptException, IOException {
-        checkBinaryTestResult(op1, castToBigInteger(op2), opCode, castToBigInteger(expected));
+
+    /**
+     * Verifies that the op Code works properly with the Operand provided.
+     */
+    protected void checkUnaryTestResult(LinkedList<byte[]> originalStack, Object op1, int opCode, Object expected)
+    throws Exception {
+        boolean result = false;
+        try {
+            LinkedList<byte[]> stack = new LinkedList<>();
+            if (originalStack != null) stack.addAll(originalStack);
+            stack.push(castToByteArray(op1));
+
+            // We build a Script that only contains the OP Code
+            ScriptBuilder scriptBuilder = new ScriptBuilder();
+            Script script = scriptBuilder.op(opCode).build();
+
+            // We run the Script.
+            checkTestResultForAllFlags(stack, script, castToByteArray(expected));
+
+        } catch (ScriptException se) {
+            throw new ScriptException("ERROR in OPCode Verification - Expected: " + expected + " actual Result: " + result);
+        }
     }
-    protected void checkBinaryTestResult(BigInteger op1, String op2, int opCode, BigInteger expected) throws ScriptException, IOException {
-        checkBinaryTestResult(op1, castToBigInteger(op2), opCode, expected);
-    }
-    protected void checkBinaryTestResult(String op1, BigInteger op2, int opCode, String expected) throws ScriptException, IOException {
-        checkBinaryTestResult(castToBigInteger(op1), op2, opCode, castToBigInteger(expected));
-    }
-    protected void checkBinaryTestResult(String op1, BigInteger op2, int opCode, BigInteger expected) throws ScriptException, IOException {
-        checkBinaryTestResult(castToBigInteger(op1), op2, opCode, expected);
+
+    /**
+     * Convenience method, without specifying an original stack trace. This methods works as if there is no data in the
+     * stack priori to the execution.
+     */
+    protected void checkUnaryTestResult(Object op1, int opCode, Object expected) throws Exception {
+        checkUnaryTestResult(null, op1, opCode, expected);
     }
 }

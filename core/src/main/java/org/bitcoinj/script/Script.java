@@ -904,6 +904,9 @@ public class Script {
 
         switch (opcode) {
             case OP_INVERT:
+                // enabled codes, still disabled if flag is not activated
+                // re-enabled OP Code, November 15, 2018 Hard fork
+                return !verifyFlags.contains(VerifyFlag.MAGNETIC_OPCODES);
             case OP_LSHIFT:
             case OP_RSHIFT:
 
@@ -1369,7 +1372,14 @@ public class Script {
                     stack.add(Utils.reverseBytes(Utils.encodeMPI(BigInteger.valueOf(stack.getLast().length), false)));
                     break;
                 case OP_INVERT:
-                    throw new ScriptException(ScriptError.SCRIPT_ERR_DISABLED_OPCODE, "script includes a disabled opcode");
+                    // re-enabled OP Code, November 15, 2018 Hard fork
+                    if (stack.size() < 1) {
+                        throw new ScriptException(ScriptError.SCRIPT_ERR_INVALID_STACK_OPERATION, "the operation was invalid given the contents of the stack");
+                    }
+                    byte[] toInvertByte = stack.pollLast();
+                    for (int i = 0; i < toInvertByte.length; i++) toInvertByte[i] = (byte) ~toInvertByte[i];
+                    stack.push(toInvertByte);
+                    break;
                 case OP_AND:
                 case OP_OR:
                 case OP_XOR:

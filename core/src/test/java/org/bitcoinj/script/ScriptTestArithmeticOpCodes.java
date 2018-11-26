@@ -1,7 +1,6 @@
 package org.bitcoinj.script;
 
 import org.junit.Test;
-
 import java.math.BigInteger;
 
 /**
@@ -10,48 +9,44 @@ import java.math.BigInteger;
  */
 public class ScriptTestArithmeticOpCodes extends ScriptTestOpCodes{
 
-
     /**
      * Checks the OP_MUL Op Code.
      * For 2 oprands given, it checks different properties: Commutability, indentity, etc.
      */
-    private void CheckOP_MUL(BigInteger op1, BigInteger op2, BigInteger expected) throws Exception {
+    private void checkOP_MUL(String op1, String op2, String expected) throws Exception {
         boolean result = false;
 
+        BigInteger op1BI = castToBigInteger(op1);
+        BigInteger op2BI = castToBigInteger(op2);
+        BigInteger expectedBI = castToBigInteger(expected);
+
         // Negative values for multiplication
-        checkBinaryTestResult(op1, op2, ScriptOpCodes.OP_MUL, expected);
-        checkBinaryTestResult(op1, op2.negate(), ScriptOpCodes.OP_MUL, expected.negate());
-        checkBinaryTestResult(op1.negate(), op2, ScriptOpCodes.OP_MUL, expected.negate());
-        checkBinaryTestResult(op1.negate(), op2.negate(), ScriptOpCodes.OP_MUL, expected);
+        checkBinaryTestResult(op1BI, op2BI, ScriptOpCodes.OP_MUL, expectedBI);
+        checkBinaryTestResult(op1BI, op2BI.negate(), ScriptOpCodes.OP_MUL, expectedBI.negate());
+        checkBinaryTestResult(op1BI.negate(), op2BI, ScriptOpCodes.OP_MUL, expectedBI.negate());
+        checkBinaryTestResult(op1BI.negate(), op2BI.negate(), ScriptOpCodes.OP_MUL, expectedBI);
 
         // Commutativity:
-        checkBinaryTestResult(op2, op1, ScriptOpCodes.OP_MUL, expected);
-        checkBinaryTestResult(op2.negate(), op1, ScriptOpCodes.OP_MUL, expected.negate());
-        checkBinaryTestResult(op2, op1.negate(), ScriptOpCodes.OP_MUL, expected.negate());
-        checkBinaryTestResult(op2.negate(), op1.negate(), ScriptOpCodes.OP_MUL, expected);
+        checkBinaryTestResult(op2BI, op1BI, ScriptOpCodes.OP_MUL, expectedBI);
+        checkBinaryTestResult(op2BI.negate(), op1BI, ScriptOpCodes.OP_MUL, expectedBI.negate());
+        checkBinaryTestResult(op2BI, op1BI.negate(), ScriptOpCodes.OP_MUL, expectedBI.negate());
+        checkBinaryTestResult(op2BI.negate(), op1BI.negate(), ScriptOpCodes.OP_MUL, expectedBI);
 
         // Multiplication identities:
-        checkBinaryTestResult(op1, "0x01", ScriptOpCodes.OP_MUL, op1);
+        checkBinaryTestResult(op1BI, "0x01", ScriptOpCodes.OP_MUL, op1BI);
 
-        checkBinaryTestResult(op1, "0x81", ScriptOpCodes.OP_MUL, op1.negate());
-        checkBinaryTestResult(op1, "0x00", ScriptOpCodes.OP_MUL, "0x00");
+        checkBinaryTestResult(op1BI, "0x81", ScriptOpCodes.OP_MUL, op1BI.negate());
+        checkBinaryTestResult(op1BI, "0x00", ScriptOpCodes.OP_MUL, "0x00");
 
-        checkBinaryTestResult("0x01", op2, ScriptOpCodes.OP_MUL, op2);
-        checkBinaryTestResult("0x81", op2, ScriptOpCodes.OP_MUL, op2.negate());
-        checkBinaryTestResult("0x00", op2, ScriptOpCodes.OP_MUL, "0x00");
-    }
-
-    /**
-     * Convenient method, for using HEX representations for the numbers (in String format)
-     */
-    private void CheckOP_MUL(String op1, String op2, String expected) throws Exception {
-        CheckOP_MUL(castToBigInteger(op1),castToBigInteger(op2), castToBigInteger(expected));
+        checkBinaryTestResult("0x01", op2BI, ScriptOpCodes.OP_MUL, op2BI);
+        checkBinaryTestResult("0x81", op2BI, ScriptOpCodes.OP_MUL, op2BI.negate());
+        checkBinaryTestResult("0x00", op2BI, ScriptOpCodes.OP_MUL, "0x00");
     }
 
     @Test
-    public void checkOP_MUL() throws Exception{
-        CheckOP_MUL("0x05","0x06", "0x1E");
-        CheckOP_MUL("0x05","0x00", "0x00");
+    public void testOP_MUL() throws Exception{
+        checkOP_MUL("0x05","0x06", "0x1E");
+        checkOP_MUL("0x05","0x00", "0x00");
     }
 
 }
