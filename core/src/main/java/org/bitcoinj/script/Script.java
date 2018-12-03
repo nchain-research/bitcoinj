@@ -903,22 +903,18 @@ public class Script {
 
 
         switch (opcode) {
+            case OP_RSHIFT:
+            case OP_LSHIFT:
+            case OP_MUL:
             case OP_INVERT:
                 // enabled codes, still disabled if flag is not activated
                 // re-enabled OP Code, November 15, 2018 Hard fork
                 return !verifyFlags.contains(VerifyFlag.MAGNETIC_OPCODES);
-            case OP_LSHIFT:
-            case OP_RSHIFT:
 
             case OP_2MUL:
             case OP_2DIV:
                 //disabled codes
                 return true;
-            case OP_MUL:
-                // enabled codes, still disabled if flag is not activated
-                // re-enabled OP Code, November 15, 2018 Hard fork
-                return !verifyFlags.contains(VerifyFlag.MAGNETIC_OPCODES);
-
             case OP_CAT:
             case OP_SPLIT:
             case OP_AND:
@@ -1616,8 +1612,25 @@ public class Script {
                     break;
 
                 case OP_LSHIFT:
+                    if (stack.size() < 2)
+                        throw new ScriptException(ScriptError.SCRIPT_ERR_INVALID_STACK_OPERATION, "the operation was invalid given the contents of the stack");
+                    BigInteger numBitsL = castToBigInteger(stack.pollLast(), enforceMinimal);
+                    if (numBitsL.longValue() < 0)
+                        throw new ScriptException(ScriptError.SCRIPT_ERR_INVALID_NUMBER_RANGE, "the number of bits to move must be a positive number");
+                    byte[] bytesToMoveL = stack.pollLast();
+                    byte[] bytesMovedL  = executeLShift(bytesToMoveL, numBitsL.intValue());
+                    stack.add(bytesMovedL);
+                    break;
                 case OP_RSHIFT:
-                    throw new ScriptException(ScriptError.SCRIPT_ERR_DISABLED_OPCODE, "script includes a disabled opcode");
+                    if (stack.size() < 2)
+                        throw new ScriptException(ScriptError.SCRIPT_ERR_INVALID_STACK_OPERATION, "the operation was invalid given the contents of the stack");
+                    BigInteger numBitsR = castToBigInteger(stack.pollLast(), enforceMinimal);
+                    if (numBitsR.longValue() < 0)
+                        throw new ScriptException(ScriptError.SCRIPT_ERR_INVALID_NUMBER_RANGE, "the number of bits to move must be a positive number");
+                    byte[] bytesToMoveR = stack.pollLast();
+                    byte[] bytesMovedR  = executeRShift(bytesToMoveR, numBitsR.intValue());
+                    stack.add(bytesMovedR);
+                    break;
                 case OP_NUMEQUALVERIFY:
                     if (stack.size() < 2)
                         throw new ScriptException(ScriptError.SCRIPT_ERR_INVALID_STACK_OPERATION, "the operation was invalid given the contents of the stack");
@@ -1739,6 +1752,158 @@ public class Script {
         if (scriptStateListener != null) {
             scriptStateListener.onScriptComplete();
         }
+    }
+
+    /**
+     * Returns the Bit representation of the content
+     */
+    public static String toBits(byte content) {
+        StringBuffer result = new StringBuffer();
+        byte[] masks = {(byte)0x80,(byte)0x40,(byte)0x20,(byte)0x10,(byte)0x08,(byte)0x04,(byte)0x02,(byte)0x01};
+
+            for (int i = 0; i < 8; i++) {
+                if ((content & masks[i]) == 0) result.append("0");
+                else result.append("1");
+            }
+            result.append(" ");
+
+        return result.toString();
+    }
+
+    /**
+     * Performs a LShift operation on the byte array, moving all the bits to the left the number of positions
+     * specified by numBits.
+     */
+    private static byte[] executeLShift(byte[] original, int numBits) {
+
+        /*
+            The following example shows how the bits are moved. After this move, we still need to
+            restore the sign bit, but that's pretty straightforward, so we won't describe it here.
+
+            Example: array length = 3, numBits = 10:
+                - byte_shift = 1: number of complete bytes to move
+                - bits_shift = 2: number of extra bits to move after moving the previous byte
+
+            original:    [AAAAAAAA] [BBBBBBBB] [CCCCCCCC]
+
+            We process it from right-to-Left. if byte_shift > 0, some complete bytes on the right will be empty
+            after being moved to the left, so no need to process them. Here we start processing at
+            position 1, since the position 2 will be empty after moving the whole byte to the left.
+
+            result:      [00000000] [00000000] [00000000]   <- initial state
+            result:      [00000000] [CCCCCCCC] [00000000]   <- processing byte 1
+            result:      [00000000] [CCCCCC00] [00000000]   <- processing byte 1
+            result:      [BBBBBBBB] [CCCCCC00] [00000000]   <- processing byte 0
+            result:      [BBBBBB00] [CCCCCC00] [00000000]   <- processing byte 0
+            result:      [BBBBBBCC] [CCCCCC00] [00000000]   <- processing byte 0 (*)
+
+            (*) is not present in the first iteration, since we would have stepped out of the array. In this step,
+            we are filling the right side of our byte with some bits from the left side of the original byte.
+
+            processed byte:     [BBBBBB00]
+            original byte:      [CCCCCCCC]
+
+            We move the bits in the original, to the right: [000000CC]
+            And we perform an OR: [BBBBBBB00] | [000000CC] = [BBBBBBCC]
+         */
+        byte[] result = new byte[original.length];
+        if (numBits == 0) return original;
+        else if (original.length > 0) {
+
+            int byte_shift = numBits / 8;   // number of full bytes to move
+            int bits_shift = numBits % 8;   // extra bits to move after moving the full bytes
+
+            int startPoint = original.length -1 -byte_shift;
+            if (startPoint >= 0) {
+                for (int i = startPoint; i >=0; i--) {
+
+                    if (byte_shift > 0) result[i] = original[i + byte_shift];
+                    else result[i] = original[i];
+                    if (bits_shift > 0) {
+                        int byteProcessed = (int) result[i];
+                        byteProcessed = (byte) (byteProcessed << bits_shift);
+                        if (i + byte_shift + 1 < original.length) {
+                            int byteExtraBits =  original[i + byte_shift + 1];
+                            byteExtraBits = byteExtraBits & 0xFF;
+                            byteExtraBits = (byteExtraBits) >> (8 - bits_shift);
+                            byteProcessed = (byte) (byteProcessed | byteExtraBits);
+                        }
+                        result[i] = (byte) byteProcessed;
+                    }
+                } //for...
+            } // if...
+
+        } // if...
+        return result;
+    }
+
+    /**
+     * Performs a LShift operation on the byte array, moving all the bits to the left the number of positions
+     * specified by numBits.
+     */
+    private static byte[] executeRShift(byte[] original, int numBits) {
+
+        /*
+            The following example shows how the bits are moved. After this move, we still need to
+            restore the sign bit, but that's pretty straightforward, so we won't describe it here.
+
+            Example: array length = 3, numBits = 10:
+                - byte_shift = 1: number of complete bytes to move
+                - bits_shift = 2: number of extra bits to move after moving the previous byte
+
+            original:    [AAAAAAAA] [BBBBBBBB] [CCCCCCCC]
+
+            We process it from left-to-right. if byte_shift > 0, some complete bytes on the right will be empty
+            after being moved to the right, so no need to process them. Here we start processing at
+            position 1, since the position 0 will be empty after moving the whole byte to the right.
+
+            result:      [00000000] [00000000] [00000000]   <- initial state
+            result:      [00000000] [AAAAAAAA] [00000000]   <- processing byte 1
+            result:      [00000000] [00AAAAAA] [00000000]   <- processing byte 1
+            result:      [BBBBBBBB] [00AAAAAA] [BBBBBBBB]   <- processing byte 2
+            result:      [BBBBBB00] [00CCCCCC] [00BBBBBB]   <- processing byte 2
+            result:      [BBBBBBCC] [00CCCCCC] [AABBBBBB]   <- processing byte 2 (*)
+
+            (*) is not present in the first iteration, since we would have stepped out of the array. In this step,
+            we are filling the left side of our byte with some bits from the right side of the original byte.
+
+            processed byte:     [00BBBBBB]
+            original byte:      [AAAAAAAA]
+
+            We move the bits in the original, to the left: [AA000000]
+            And we perform an OR: [00BBBBBB] | [AA000000] = [AABBBBBB]
+         */
+
+        byte[] result = new byte[original.length];
+
+        if (numBits == 0) return original;
+        else if (original.length > 0) {
+
+            int byte_shift = numBits / 8;   // number of full bytes to move
+            int bits_shift = numBits % 8;   // extra bits to move after moving the full bytes
+
+            int startPoint = 0 + byte_shift;
+            if (startPoint <= original.length - 1) {
+                for (int i = startPoint; i < original.length; i++) {
+                    if (byte_shift > 0) result[i] = original[i - 1];
+                    else result[i] = original[i];
+                    if (bits_shift > 0) {
+
+                        int byteProcessed = (int) result[i];
+                        byteProcessed = byteProcessed & 0xFF;
+                        byteProcessed = (byte) (byteProcessed >> bits_shift);
+                        if (i - byte_shift - 1 >= 0) {
+                            int byteExtraBits =  original[i - byte_shift - 1];
+                            byteExtraBits = (byteExtraBits) << (8 - bits_shift);
+                            byteProcessed = (byte) (byteProcessed | byteExtraBits);
+                        }
+                        result[i] = (byte) byteProcessed;
+                    }
+                } //for...
+            } // if...
+        } // if...
+
+        return result;
     }
 
     // This is more or less a direct translation of the code in Bitcoin Core

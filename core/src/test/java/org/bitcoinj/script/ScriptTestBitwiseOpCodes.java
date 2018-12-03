@@ -14,10 +14,7 @@ public class ScriptTestBitwiseOpCodes extends ScriptTestOpCodes {
     private static EnumSet<Script.VerifyFlag> FLAGS = Script.ALL_VERIFY_FLAGS;
 
     private void checkOP_INVERT(Object op1, Object expected) throws Exception {
-
-        StackItem op1El = op1 instanceof StackItem ? (StackItem) op1 :  StackItem.ofHex((String) op1);
-        StackItem expEl = expected instanceof StackItem ? (StackItem) expected : StackItem.ofHex((String) expected);
-        checkUnaryTestResult(op1El, ScriptOpCodes.OP_INVERT, expEl, FLAGS);
+        checkUnaryTestResult(op1, ScriptOpCodes.OP_INVERT, FLAGS, expected, null);
     }
 
     @Test
